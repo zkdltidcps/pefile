@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+# 忽略所有下載的良性 PE 檔案（太大了且不需要版本控制）
+benign_pe/
+# 如果你想保留歷史紀錄，可以考慮只忽略子資料夾，但通常資料夾會排除
+# !benign_pe/metadata/
+
+# Docker
+.docker/

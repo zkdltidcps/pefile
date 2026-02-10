@@ -1,0 +1,4 @@
+requests
+pyyaml
+pefile
+beautifulsoup4

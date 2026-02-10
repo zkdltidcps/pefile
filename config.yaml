@@ -1,0 +1,57 @@
+# 是否真的進行下載 (true: 下載並解壓, false: 僅模擬搜尋)
+ENABLE_DOWNLOAD: true
+
+# 爬蟲執行間隔 (分鐘)
+SYNC_INTERVAL: 60
+
+# 自動搜尋設定
+DISCOVERY_SETTINGS:
+  MIN_STARS: 1000
+  MAX_REPOS_PER_RUN: 3
+  TOPICS:
+    - "windows-utility"
+    - "desktop-application"
+    - "cpp-application"
+    - "rust-tools"
+    - "go-tools"
+  # 搜尋關鍵字
+  QUERIES:
+    - "topic:windows-application"
+    - "topic:desktop"
+    - "language:cpp topic:windows"
+
+# 安全設定
+# 當磁碟使用率超過此比例 (0.0 ~ 1.0) 時，腳本會自動暫停
+DISK_USAGE_THRESHOLD: 0.7
+
+# Chocolatey (NuGet) 搜尋設定
+CHOCO_SETTINGS:
+  # 搜尋關鍵字 (透過 NuGet API)
+  QUERY: "tags:chocolatey"
+  MAX_PACKAGES_PER_RUN: 5
+  # 也可以指定特定熱門套件
+  FEATURED_PACKAGES:
+    - "googlechrome"
+    - "firefox"
+    - "7zip"
+    - "vlc"
+    - "git"
+
+# PortableApps 搜尋設定
+PORTABLEAPPS_SETTINGS:
+  # 爬取頁面（軟體清單）
+  BASE_URL: "https://portableapps.com/apps"
+  # 限制爬取的分類 (例如: Office, Development)
+  # 若為空則爬取所有分類
+  CATEGORIES:
+    - "Development"
+    - "Security"
+    - "Utilities"
+  MAX_APPS_PER_RUN: 5
+
+# 下載過濾副檔名
+ALLOWED_EXTENSIONS:
+  - ".exe"
+  - ".dll"
+  - ".sys"
+  - ".msi"

@@ -1,0 +1,9 @@
+services:
+  crawler:
+    build: .
+    volumes:
+      - ./benign_pe:/app/benign_pe
+      - ./config.yaml:/app/config.yaml
+      - ./scripts:/app/scripts
+    environment:
+      - PYTHONUNBUFFERED=1
