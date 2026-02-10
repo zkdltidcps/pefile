@@ -6,7 +6,7 @@ import io
 import json
 import time
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file
 
 HISTORY_FILE = Path("benign_pe/metadata/history_choco.json")
 
@@ -54,12 +54,18 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
                 # 只有副檔名在允許清單內的才解壓
                 if any(file_info.filename.lower().endswith(ext) for ext in [".exe", ".dll", ".sys"]):
                     # 避免解壓到外部
-                    filename = os.path.basename(file_info.filename)
-                    if filename:
-                        with open(target_dir / filename, "wb") as f:
-                            f.write(z.read(file_info))
-                        print(f"   Extracted: {filename}")
-                        extracted_any = True
+                    # The original code used os.path.basename, but z.extract handles paths within the zip.
+                    # We need to ensure the full path is used for extraction and subsequent PE check.
+                    if not file_info.is_dir(): # Only process files, not directories
+                        z.extract(file_info, target_dir)
+                        extracted_path = target_dir / file_info.filename
+                        
+                        if is_pe_file(extracted_path):
+                            print(f"   Extracted and verified: {file_info.filename}")
+                            extracted_any = True # Only count as extracted if it's a valid PE
+                        else:
+                            print(f"   [DELETE] Not a valid PE: {file_info.filename}")
+                            os.remove(extracted_path)
             
             if extracted_any:
                 history.add(url)

@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from bs4 import BeautifulSoup
 import re
-from utils import check_disk_usage, get_threshold_from_config
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file
 
 HISTORY_FILE = Path("benign_pe/metadata/history_portable.json")
 

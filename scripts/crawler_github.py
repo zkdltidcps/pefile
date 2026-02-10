@@ -6,7 +6,7 @@ import io
 import time
 import json
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file
 
 HISTORY_FILE = Path("benign_pe/metadata/history_github.json")
 
@@ -55,16 +55,32 @@ def download_and_extract(url, target_dir, enable_download, history):
                 for file_info in z.infolist():
                     if any(file_info.filename.lower().endswith(ext) for ext in [".exe", ".dll", ".sys"]):
                         z.extract(file_info, target_dir)
-                        print(f"   Extracted: {file_info.filename}")
-                        extracted_any = True
+                        
+                        # 嚴格驗證 PE 簽章
+                        if is_pe_file(extracted_path):
+                            print(f"   Extracted and verified: {file_info.filename}")
+                            extracted_any = True
+                        else:
+                            print(f"   [DELETE] Not a valid PE: {file_info.filename}")
+                            os.remove(extracted_path)
                 success = extracted_any
         else:
             # 單一檔案直接存
             file_name = url.split("/")[-1]
-            with open(target_dir / file_name, "wb") as f:
-                f.write(response.content)
-            print(f"   Saved: {file_name}")
-            success = True
+            dest_path = target_dir / file_name
+            content = response.content
+
+            with open(dest_path, 'wb') as f:
+                f.write(content)
+            
+            # 嚴格驗證 PE 簽章
+            if is_pe_file(dest_path):
+                print(f"   Saved and verified: {file_name}")
+                success = True
+            else:
+                print(f"   [DELETE] Not a valid PE: {file_name}")
+                os.remove(dest_path)
+                success = False
         
         if success:
             history.add(url)
