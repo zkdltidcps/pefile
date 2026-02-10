@@ -149,17 +149,18 @@ def get_automated_repos(config):
                                 break
                     # 下一輪從下一頁開始
                     github_state[query] = current_page + 1
-                print(f"  [!] GitHub Search Failure: {res.status_code}")
                 if res.status_code == 403:
                     reset_time = res.headers.get('X-RateLimit-Reset')
                     if reset_time:
                         import datetime
                         wait_time = datetime.datetime.fromtimestamp(int(reset_time))
                         print(f"  [RATE LIMIT] Search API blocked. Resets at: {wait_time}")
+                    return [] # Rate limit hit, stop discovery
             else:
                 print(f" [!] GitHub Search API: HTTP {res.status_code}")
                 if res.status_code == 403:
                     print("  [!] Rate Limit hit during discovery.")
+                    return []
         except Exception as e:
             print(f" Error during discovery: {e}")
         
@@ -226,6 +227,8 @@ def main():
                     import datetime
                     wait_time = datetime.datetime.fromtimestamp(int(reset_time))
                     print(f"     API will reset at: {wait_time}")
+                print(" [!] Stopping GitHub crawler cycle to allow other crawlers to run.")
+                return # Early exit on Rate Limit
             else:
                 print(f" [!] GitHub API Error: HTTP {res.status_code}")
         except Exception as e:
