@@ -62,7 +62,9 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
     try:
         response = requests.get(url, timeout=60)
         if response.status_code != 200:
-            print(f"  Failed to download {url}")
+            print(f"  Failed to download {url} (HTTP {response.status_code})")
+            if response.status_code in [403, 429]:
+                return "RATE_LIMIT"
             return False
 
         # nupkg 是一個 zip 檔案
@@ -124,6 +126,11 @@ def get_choco_packages(config):
                     packages.append({"id": pkg_id, "url": download_url})
                 # 下一輪繼續往下跳
                 choco_state["skip"] = current_skip + max_pkgs
+        else:
+            print(f" [!] Chocolatey Search API Error: HTTP {res.status_code}")
+            if res.status_code in [403, 429]:
+                print("  [!] Rate Limit or Access Blocked by NuGet. Skipping Choco for this cycle.")
+                return [] # Return empty to stop this run
     except Exception as e:
         print(f"Error fetching choco packages: {e}")
         
@@ -151,7 +158,11 @@ def main():
         target_dir = base_dir / pkg['id']
         target_dir.mkdir(parents=True, exist_ok=True)
         
-        download_and_extract_nupkg(pkg['url'], target_dir, enable_download, history)
+        result = download_and_extract_nupkg(pkg['url'], target_dir, enable_download, history)
+        if result == "RATE_LIMIT":
+            print(" [!] Rate Limit hit during download. Stopping Choco cycle.")
+            break
+        
         time.sleep(1)
 
 if __name__ == "__main__":
