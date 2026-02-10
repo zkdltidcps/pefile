@@ -70,14 +70,21 @@ def download_file(url, target_dir, enable_download, history):
         if not file_name:
             file_name = "downloaded_app.exe"
 
-        with open(target_dir / file_name, "wb") as f:
+        dest_path = target_dir / file_name
+        with open(dest_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
         
-        print(f"   Saved: {file_name}")
-        history.add(url)
-        save_history(history)
-        return True
+        # 嚴格驗證 PE 簽章
+        if is_pe_file(dest_path):
+            print(f"   Saved and verified: {file_name}")
+            history.add(url)
+            save_history(history)
+            return True
+        else:
+            print(f"   [DELETE] Not a valid PE: {file_name}")
+            os.remove(dest_path)
+            return False
     except Exception as e:
         print(f"  Error during download: {e}")
     return False

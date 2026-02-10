@@ -56,6 +56,8 @@ def download_and_extract(url, target_dir, enable_download, history):
                     if any(file_info.filename.lower().endswith(ext) for ext in [".exe", ".dll", ".sys"]):
                         z.extract(file_info, target_dir)
                         
+                        extracted_path = target_dir / file_info.filename
+                        
                         # 嚴格驗證 PE 簽章
                         if is_pe_file(extracted_path):
                             print(f"   Extracted and verified: {file_info.filename}")
