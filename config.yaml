@@ -6,8 +6,8 @@ SYNC_INTERVAL: 0
 
 # 自動搜尋設定 (GitHub)
 DISCOVERY_SETTINGS:
-  MIN_STARS: 100 # 調低門檻以獲得更多樣本
-  MAX_REPOS_PER_RUN: 100
+  MIN_STARS: 50 # 降到更低，以量取勝
+  MAX_REPOS_PER_RUN: 500 # 提升批次
   TOPICS:
     - "windows"
     - "win32"
@@ -15,32 +15,31 @@ DISCOVERY_SETTINGS:
     - "cpp"
     - "csharp"
     - "dotnet"
-    - "tools"
-    - "utility"
+    - "pascal" # Delphi 軟體非常多
+    - "assembly"
+    - "software"
   # 搜尋關鍵字
   QUERIES:
     - "language:cpp topic:windows"
     - "language:csharp topic:windows"
-    - "stars:>100 extension:exe"
-    - "topic:windows-utility"
+    - "language:pascal topic:windows"
+    - "topic:windows-application stars:>50"
+    - "topic:desktop stars:>50"
 
 # 安全設定
-# 調高到 0.85 或 0.9，因為 10 萬個檔案可能佔用數百 GB
-DISK_USAGE_THRESHOLD: 0.85
+DISK_USAGE_THRESHOLD: 0.9 # 再調高一點點
 
 # Chocolatey (NuGet) 搜尋設定
 CHOCO_SETTINGS:
-  # 空關鍵字以抓取所有可見套件
   QUERY: ""
-  MAX_PACKAGES_PER_RUN: 500
+  MAX_PACKAGES_PER_RUN: 1000 # 提升批次
   FEATURED_PACKAGES: []
 
 # PortableApps 搜尋設定
 PORTABLEAPPS_SETTINGS:
   BASE_URL: "https://portableapps.com/apps"
-  # 留空以爬取不限分類的所有 App (約有 400+ 個)
   CATEGORIES: []
-  MAX_APPS_PER_RUN: 1000
+  MAX_APPS_PER_RUN: 2000 # 雖然總量不多，但確保一次掃完
 
 # 下載過濾副檔名
 ALLOWED_EXTENSIONS:

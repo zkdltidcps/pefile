@@ -16,6 +16,6 @@ do
     echo "[3/3] Running PortableApps Crawler..."
     docker-compose run crawler python scripts/crawler_portable.py
     
-    echo "=== Cycle Finished. Sleeping for 1 hour... ==="
-    sleep 3600
+    echo "=== Cycle Finished. Sleeping for 5 minutes... ==="
+    sleep 300
 done
