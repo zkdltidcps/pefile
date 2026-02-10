@@ -1,4 +1,4 @@
-.PHONY: help build check run-github run-choco run-portable start-forever stop-forever logs clean-metadata
+.PHONY: help build check run-github run-choco run-portable start-loop stop-loop logs clean-metadata
 
 help:
 	@echo "PE Collection Pipeline - Makefile"
@@ -9,8 +9,8 @@ help:
 	@echo "  make run-github       Run GitHub crawler once"
 	@echo "  make run-choco        Run Chocolatey crawler once"
 	@echo "  make run-portable     Run PortableApps crawler once"
-	@echo "  make start-forever    Start the 24/7 background collection loop"
-	@echo "  make stop-forever     Stop the background collection loop"
+	@echo "  make start-loop       Start the 24/7 background collection loop"
+	@echo "  make stop-loop        Stop the background collection loop"
 	@echo "  make logs             View background loop logs"
 	@echo "  make clean-metadata   Reset all download history"
 
@@ -29,13 +29,13 @@ run-choco:
 run-portable:
 	docker-compose run --rm crawler python scripts/crawler_portable.py
 
-start-forever:
-	chmod +x collect_forever.sh
-	nohup ./collect_forever.sh > crawl_service.log 2>&1 &
+start-loop:
+	chmod +x collect_loop.sh
+	nohup ./collect_loop.sh > crawl_service.log 2>&1 &
 	@echo "Crawler service started in background. Use 'make logs' to monitor."
 
-stop-forever:
-	@pkill -f collect_forever.sh || echo "Process not running."
+stop-loop:
+	@pkill -f collect_loop.sh || echo "Process not running."
 
 logs:
 	tail -f crawl_service.log
