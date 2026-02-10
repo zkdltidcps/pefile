@@ -9,6 +9,7 @@ from pathlib import Path
 from utils import check_disk_usage, get_threshold_from_config, is_pe_file
 
 HISTORY_FILE = Path("benign_pe/metadata/history_choco.json")
+STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
 
 def load_config():
     with open("config.yaml", "r") as f:
@@ -30,6 +31,23 @@ def save_history(history):
             json.dump(list(history), f, indent=2)
     except Exception as e:
         print(f"Error saving history: {e}")
+
+def load_discovery_state():
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_discovery_state(state):
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except:
+        pass
 
 def download_and_extract_nupkg(url, target_dir, enable_download, history):
     if url in history:
@@ -77,28 +95,40 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
 
 def get_choco_packages(config):
     choco_conf = config.get("CHOCO_SETTINGS", {})
-    query = choco_conf.get("QUERY", "tags:chocolatey")
+    query = choco_conf.get("QUERY", "")
     max_pkgs = choco_conf.get("MAX_PACKAGES_PER_RUN", 5)
     
+    state = load_discovery_state()
+    choco_state = state.get("choco", {})
+    current_skip = choco_state.get("skip", 0)
+    
     # 使用 NuGet V3 API 搜尋
-    search_url = f"https://azuresearch-usnc.nuget.org/query?q={query}&take={max_pkgs}&prerelease=false"
+    search_url = f"https://azuresearch-usnc.nuget.org/query?q={query}&take={max_pkgs}&skip={current_skip}&prerelease=false"
+    print(f"Fetching Chocolatey packages (Skip: {current_skip}, Take: {max_pkgs})")
+    
     packages = []
     
     try:
         res = requests.get(search_url, timeout=15)
         if res.status_code == 200:
             data = res.json()
-            for item in data.get("data", []):
-                pkg_id = item.get("id")
-                # 獲取最新版本
-                version = item.get("version")
-                # 構建下載連結 (標準 NuGet 格式)
-                # 格式: https://www.nuget.org/api/v2/package/{ID}/{VERSION}
-                download_url = f"https://www.nuget.org/api/v2/package/{pkg_id}/{version}"
-                packages.append({"id": pkg_id, "url": download_url})
+            items = data.get("data", [])
+            if not items:
+                # 沒東西了就從頭開始
+                choco_state["skip"] = 0
+            else:
+                for item in items:
+                    pkg_id = item.get("id")
+                    version = item.get("version")
+                    download_url = f"https://www.nuget.org/api/v2/package/{pkg_id}/{version}"
+                    packages.append({"id": pkg_id, "url": download_url})
+                # 下一輪繼續往下跳
+                choco_state["skip"] = current_skip + max_pkgs
     except Exception as e:
         print(f"Error fetching choco packages: {e}")
         
+    state["choco"] = choco_state
+    save_discovery_state(state)
     return packages
 
 def main():

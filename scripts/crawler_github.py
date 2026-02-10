@@ -9,6 +9,7 @@ from pathlib import Path
 from utils import check_disk_usage, get_threshold_from_config, is_pe_file
 
 HISTORY_FILE = Path("benign_pe/metadata/history_github.json")
+STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
 
 def load_config():
     with open("config.yaml", "r") as f:
@@ -30,6 +31,23 @@ def save_history(history):
             json.dump(list(history), f, indent=2)
     except Exception as e:
         print(f"Error saving history: {e}")
+
+def load_discovery_state():
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_discovery_state(state):
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except:
+        pass
 
 def download_and_extract(url, target_dir, enable_download, history):
     if url in history:
@@ -99,6 +117,9 @@ def get_automated_repos(config):
     queries = discovery.get("QUERIES", ["topic:windows"])
     max_repos = discovery.get("MAX_REPOS_PER_RUN", 10)
     
+    state = load_discovery_state()
+    github_state = state.get("github", {})
+    
     found_repos = []
     headers = {"Accept": "application/vnd.github.v3+json"}
     token = os.environ.get("GITHUB_TOKEN")
@@ -106,19 +127,28 @@ def get_automated_repos(config):
         headers["Authorization"] = f"token {token}"
     
     for query in queries:
-        search_url = f"https://api.github.com/search/repositories?q={query}+stars:>{min_stars}&sort=stars&order=desc&per_page=30"
-        print(f"Searching for repos with query: {query}")
+        # 取得該查詢上次讀到的頁碼，預設為 1
+        current_page = github_state.get(query, 1)
+        
+        search_url = f"https://api.github.com/search/repositories?q={query}+stars:>{min_stars}&sort=stars&order=desc&per_page=100&page={current_page}"
+        print(f"Searching for repos with query: {query} (Page: {current_page})")
         
         try:
             res = requests.get(search_url, headers=headers, timeout=15)
             if res.status_code == 200:
                 items = res.json().get("items", [])
-                for item in items:
-                    repo_full_name = item.get("full_name")
-                    if repo_full_name not in found_repos:
-                        found_repos.append(repo_full_name)
-                        if len(found_repos) >= max_repos:
-                            break
+                if not items:
+                    # 如果沒東西了，就把頁碼重置回 1 重新循環
+                    github_state[query] = 1
+                else:
+                    for item in items:
+                        repo_full_name = item.get("full_name")
+                        if repo_full_name not in found_repos:
+                            found_repos.append(repo_full_name)
+                            if len(found_repos) >= max_repos:
+                                break
+                    # 下一輪從下一頁開始
+                    github_state[query] = current_page + 1
             else:
                 print(f" Search failed for {query}: {res.status_code}")
         except Exception as e:
@@ -127,6 +157,8 @@ def get_automated_repos(config):
         if len(found_repos) >= max_repos:
             break
             
+    state["github"] = github_state
+    save_discovery_state(state)
     return found_repos
 
 def main():
