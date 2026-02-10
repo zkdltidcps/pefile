@@ -1,4 +1,4 @@
-.PHONY: help build check run-github run-choco run-portable start-loop stop-loop logs clean-metadata
+.PHONY: help build check count run-github run-choco run-portable start-loop stop-loop logs clean-metadata
 
 help:
 	@echo "PE Collection Pipeline - Makefile"
@@ -12,6 +12,7 @@ help:
 	@echo "  make start-loop       Start the 24/7 background collection loop"
 	@echo "  make stop-loop        Stop the background collection loop"
 	@echo "  make logs             View background loop logs"
+	@echo "  make count            Show number of collected files"
 	@echo "  make clean-metadata   Reset all download history"
 
 build:
@@ -19,6 +20,10 @@ build:
 
 check:
 	docker-compose run --rm crawler python scripts/server_check.py
+
+count:
+	chmod +x count_files.sh
+	./count_files.sh
 
 run-github:
 	docker-compose run --rm crawler python scripts/crawler_github.py
