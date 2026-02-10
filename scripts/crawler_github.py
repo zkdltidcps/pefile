@@ -149,8 +149,17 @@ def get_automated_repos(config):
                                 break
                     # 下一輪從下一頁開始
                     github_state[query] = current_page + 1
+                print(f"  [!] GitHub Search Failure: {res.status_code}")
+                if res.status_code == 403:
+                    reset_time = res.headers.get('X-RateLimit-Reset')
+                    if reset_time:
+                        import datetime
+                        wait_time = datetime.datetime.fromtimestamp(int(reset_time))
+                        print(f"  [RATE LIMIT] Search API blocked. Resets at: {wait_time}")
             else:
-                print(f" Search failed for {query}: {res.status_code}")
+                print(f" [!] GitHub Search API: HTTP {res.status_code}")
+                if res.status_code == 403:
+                    print("  [!] Rate Limit hit during discovery.")
         except Exception as e:
             print(f" Error during discovery: {e}")
         
@@ -197,14 +206,28 @@ def main():
                 target_dir = base_dir / repo_name
                 target_dir.mkdir(parents=True, exist_ok=True)
 
+                found_assets = False
                 for asset in assets:
                     asset_url = asset.get("browser_download_url")
                     if any(asset_url.lower().endswith(ext) for ext in [".exe", ".dll", ".zip", ".msi"]):
                         if download_and_extract(asset_url, target_dir, enable_download, history):
                             download_total += 1
+                            found_assets = True
+                
+                if not found_assets:
+                    print(f"  [SKIP] No PE-related files (exe/dll/zip/msi) found in assets.")
             
             elif res.status_code == 404:
                 print(f" No releases found for {repo}.")
+            elif res.status_code == 403:
+                print(f" [!] Rate Limit: GitHub API blocked access for {repo}.")
+                reset_time = res.headers.get('X-RateLimit-Reset')
+                if reset_time:
+                    import datetime
+                    wait_time = datetime.datetime.fromtimestamp(int(reset_time))
+                    print(f"     API will reset at: {wait_time}")
+            else:
+                print(f" [!] GitHub API Error: HTTP {res.status_code}")
         except Exception as e:
             print(f" Error processing {repo}: {e}")
         
