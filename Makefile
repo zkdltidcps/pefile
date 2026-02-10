@@ -40,7 +40,9 @@ start-loop:
 	@echo "Crawler service started in background. Use 'make logs' to monitor."
 
 stop-loop:
-	@pkill -f collect_loop.sh || echo "Process not running."
+	@pkill -f collect_loop.sh || echo "Loop process not running."
+	docker-compose down
+	@echo "Stop command sent to all containers."
 
 logs:
 	tail -f crawl_service.log
