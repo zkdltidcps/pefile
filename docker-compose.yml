@@ -7,3 +7,4 @@ services:
       - ./scripts:/app/scripts
     environment:
       - PYTHONUNBUFFERED=1
+      - GITHUB_TOKEN=${GITHUB_TOKEN}

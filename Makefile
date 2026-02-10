@@ -36,8 +36,8 @@ run-portable:
 
 start-loop:
 	chmod +x collect_loop.sh
-	nohup ./collect_loop.sh > crawl_service.log 2>&1 &
-	@echo "Crawler service started in background. Use 'make logs' to monitor."
+	export GITHUB_TOKEN=$(GITHUB_TOKEN); nohup ./collect_loop.sh > crawl_service.log 2>&1 &
+	@echo "Crawler service started with GitHub Token. Use 'make logs' to monitor."
 
 stop-loop:
 	@pkill -f "[c]ollect_loop.sh" || echo "Loop process not running."
