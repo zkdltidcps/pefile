@@ -25,6 +25,9 @@ count:
 	chmod +x count_files.sh
 	./count_files.sh
 
+sanitize:
+	docker-compose run --rm crawler python scripts/sanitizer.py
+
 run-github:
 	docker-compose run --rm crawler python scripts/crawler_github.py
 
