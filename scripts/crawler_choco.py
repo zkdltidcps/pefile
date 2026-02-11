@@ -71,6 +71,10 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             extracted_any = False
             for file_info in z.infolist():
+                # 排除 macOS 系統垃圾檔案
+                if "__MACOSX" in file_info.filename or os.path.basename(file_info.filename).startswith("._"):
+                    continue
+                    
                 # 只有副檔名在允許清單內的才解壓
                 if any(file_info.filename.lower().endswith(ext) for ext in [".exe", ".dll", ".sys"]):
                     # 避免解壓到外部
