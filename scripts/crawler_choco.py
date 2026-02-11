@@ -6,7 +6,7 @@ import io
 import json
 import time
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature
 
 HISTORY_FILE = Path("benign_pe/metadata/history_choco.json")
 STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
@@ -87,7 +87,8 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
                         extracted_path = target_dir / file_info.filename
                         
                         if is_pe_file(extracted_path):
-                            print(f"   Extracted and verified: {file_info.filename}")
+                            signed = " (Signed)" if verify_signature(extracted_path) else " (Unsigned)"
+                            print(f"   Extracted and verified: {file_info.filename}{signed}")
                             extracted_any = True # Only count as extracted if it's a valid PE
                         else:
                             print(f"   [DELETE] Not a valid PE: {file_info.filename}")

@@ -58,6 +58,26 @@ def is_pe_file(file_path):
     except Exception:
         return False
 
+def verify_signature(file_path):
+    """
+    使用 osslsigncode 驗證檔案是否具有數位簽章。
+    回傳 True 代表檔案已簽署，False 代表未簽署。
+    """
+    import subprocess
+    try:
+        # osslsigncode verify -in <file>
+        # 如果有簽名且認證通過，回傳值通常為 0
+        cmd = ["osslsigncode", "verify", "-in", str(file_path)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        
+        # 只要輸出中包含 "Signature verification: ok" 或是 "Signature verify OK"
+        # 這裡我們採取寬鬆檢查：只要有簽名存在就算
+        if result.returncode == 0 or "Signature verification: ok" in result.stdout:
+            return True
+    except Exception:
+        pass
+    return False
+
 def remove_empty_dirs(root_path):
     """
     遞迴移除指定路徑下的所有空資料夾。

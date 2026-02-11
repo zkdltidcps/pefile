@@ -6,7 +6,7 @@ import io
 import time
 import json
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature
 
 HISTORY_FILE = Path("benign_pe/metadata/history_github.json")
 STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
@@ -85,7 +85,8 @@ def download_and_extract(url, target_dir, enable_download, history):
                         
                         # 嚴格驗證 PE 簽章
                         if is_pe_file(extracted_path):
-                            print(f"   Extracted and verified: {file_info.filename}")
+                            signed = " (Signed)" if verify_signature(extracted_path) else " (Unsigned)"
+                            print(f"   Extracted and verified: {file_info.filename}{signed}")
                             extracted_any = True
                         else:
                             print(f"   [DELETE] Not a valid PE: {file_info.filename}")
@@ -105,7 +106,8 @@ def download_and_extract(url, target_dir, enable_download, history):
             
             # 嚴格驗證 PE 簽章
             if is_pe_file(dest_path):
-                print(f"   Saved and verified: {file_name}")
+                signed = " (Signed)" if verify_signature(dest_path) else " (Unsigned)"
+                print(f"   Saved and verified: {file_name}{signed}")
                 success = True
             else:
                 print(f"   [DELETE] Not a valid PE: {file_name}")
