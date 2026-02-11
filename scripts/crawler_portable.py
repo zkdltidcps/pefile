@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from bs4 import BeautifulSoup
 import re
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature, scan_with_clamav
 
 HISTORY_FILE = Path("benign_pe/metadata/history_portable.json")
 
@@ -81,10 +81,18 @@ def download_file(url, target_dir, enable_download, history):
         
         # 嚴格驗證 PE 簽章
         if is_pe_file(dest_path):
-            print(f"   Saved and verified: {file_name}")
-            history.add(url)
-            save_history(history)
-            return True
+            signed = " (Signed)" if verify_signature(dest_path) else " (Unsigned)"
+            
+            # ClamAV 掃描
+            if scan_with_clamav(dest_path):
+                print(f"   Saved and verified: {file_name}{signed} (Clean)")
+                history.add(url)
+                save_history(history)
+                return True
+            else:
+                print(f"   [DELETE] ClamAV detected threat: {file_name}")
+                os.remove(dest_path)
+                return False
         else:
             print(f"   [DELETE] Not a valid PE: {file_name}")
             os.remove(dest_path)

@@ -7,7 +7,12 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     osslsigncode \
+    clamav \
+    clamav-freshclam \
     && rm -rf /var/lib/apt/lists/*
+
+# 初始化病毒庫 (注意：這在某些環境可能會失敗，通常建議啟動後背景更新)
+RUN freshclam || true
 
 # 複製需求檔並安裝
 COPY requirements.txt .

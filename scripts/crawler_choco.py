@@ -6,7 +6,7 @@ import io
 import json
 import time
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature, scan_with_clamav
 
 HISTORY_FILE = Path("benign_pe/metadata/history_choco.json")
 STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
@@ -88,8 +88,14 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
                         
                         if is_pe_file(extracted_path):
                             signed = " (Signed)" if verify_signature(extracted_path) else " (Unsigned)"
-                            print(f"   Extracted and verified: {file_info.filename}{signed}")
-                            extracted_any = True # Only count as extracted if it's a valid PE
+                            
+                            # ClamAV 掃描
+                            if scan_with_clamav(extracted_path):
+                                print(f"   Extracted and verified: {file_info.filename}{signed} (Clean)")
+                                extracted_any = True # Only count as extracted if it's a valid PE and clean
+                            else:
+                                print(f"   [DELETE] ClamAV detected threat: {file_info.filename}")
+                                os.remove(extracted_path)
                         else:
                             print(f"   [DELETE] Not a valid PE: {file_info.filename}")
                             os.remove(extracted_path)

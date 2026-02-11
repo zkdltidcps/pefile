@@ -6,7 +6,7 @@ import io
 import time
 import json
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs, verify_signature, scan_with_clamav
 
 HISTORY_FILE = Path("benign_pe/metadata/history_github.json")
 STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
@@ -86,8 +86,14 @@ def download_and_extract(url, target_dir, enable_download, history):
                         # 嚴格驗證 PE 簽章
                         if is_pe_file(extracted_path):
                             signed = " (Signed)" if verify_signature(extracted_path) else " (Unsigned)"
-                            print(f"   Extracted and verified: {file_info.filename}{signed}")
-                            extracted_any = True
+                            
+                            # ClamAV 掃描
+                            if scan_with_clamav(extracted_path):
+                                print(f"   Extracted and verified: {file_info.filename}{signed} (Clean)")
+                                extracted_any = True
+                            else:
+                                print(f"   [DELETE] ClamAV detected threat: {file_info.filename}")
+                                os.remove(extracted_path)
                         else:
                             print(f"   [DELETE] Not a valid PE: {file_info.filename}")
                             os.remove(extracted_path)
@@ -107,8 +113,15 @@ def download_and_extract(url, target_dir, enable_download, history):
             # 嚴格驗證 PE 簽章
             if is_pe_file(dest_path):
                 signed = " (Signed)" if verify_signature(dest_path) else " (Unsigned)"
-                print(f"   Saved and verified: {file_name}{signed}")
-                success = True
+                
+                # ClamAV 掃描
+                if scan_with_clamav(dest_path):
+                    print(f"   Saved and verified: {file_name}{signed} (Clean)")
+                    success = True
+                else:
+                    print(f"   [DELETE] ClamAV detected threat: {file_name}")
+                    os.remove(dest_path)
+                    success = False
             else:
                 print(f"   [DELETE] Not a valid PE: {file_name}")
                 os.remove(dest_path)

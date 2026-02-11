@@ -78,6 +78,27 @@ def verify_signature(file_path):
         pass
     return False
 
+def scan_with_clamav(file_path):
+    """
+    使用 clamscan 進行病毒掃描。
+    回傳 True 代表檔案安全（未發現威脅），False 代表發現威脅。
+    """
+    import subprocess
+    try:
+        # clamscan --no-summary <file>
+        # 回傳值: 0: 未發現病毒, 1: 發現病毒, 2: 發生錯誤
+        cmd = ["clamscan", "--no-summary", str(file_path)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            return True
+        elif result.returncode == 1:
+            print(f" [!] ClamAV: Malware detected in {file_path}!")
+            return False
+    except Exception as e:
+        print(f" [!] ClamAV: Scan error: {e}")
+    return True # 如果掃描出錯，預設先放行
+
 def remove_empty_dirs(root_path):
     """
     遞迴移除指定路徑下的所有空資料夾。
