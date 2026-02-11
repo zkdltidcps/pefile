@@ -6,7 +6,7 @@ import io
 import time
 import json
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs
 
 HISTORY_FILE = Path("benign_pe/metadata/history_github.json")
 STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
@@ -76,6 +76,9 @@ def download_and_extract(url, target_dir, enable_download, history):
                         continue
                         
                     if any(file_info.filename.lower().endswith(ext) for ext in [".exe", ".dll", ".sys"]):
+                        if not target_dir.exists():
+                            target_dir.mkdir(parents=True, exist_ok=True)
+                            
                         z.extract(file_info, target_dir)
                         
                         extracted_path = target_dir / file_info.filename
@@ -94,6 +97,9 @@ def download_and_extract(url, target_dir, enable_download, history):
             dest_path = target_dir / file_name
             content = response.content
 
+            if not target_dir.exists():
+                target_dir.mkdir(parents=True, exist_ok=True)
+                
             with open(dest_path, 'wb') as f:
                 f.write(content)
             
@@ -209,7 +215,7 @@ def main():
                 
                 repo_name = repo.split("/")[-1]
                 target_dir = base_dir / repo_name
-                target_dir.mkdir(parents=True, exist_ok=True)
+                # target_dir.mkdir(parents=True, exist_ok=True)  # <-- 改為延遲建立
 
                 found_assets = False
                 for asset in assets:
@@ -239,6 +245,9 @@ def main():
             print(f" Error processing {repo}: {e}")
         
         time.sleep(1)
+
+    # 執行完畢後清理空資料夾
+    remove_empty_dirs(base_dir)
 
 if __name__ == "__main__":
     main()

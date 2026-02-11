@@ -6,7 +6,7 @@ import io
 import json
 import time
 from pathlib import Path
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs
 
 HISTORY_FILE = Path("benign_pe/metadata/history_choco.json")
 STATE_FILE = Path("benign_pe/metadata/discovery_state.json")
@@ -81,6 +81,8 @@ def download_and_extract_nupkg(url, target_dir, enable_download, history):
                     # The original code used os.path.basename, but z.extract handles paths within the zip.
                     # We need to ensure the full path is used for extraction and subsequent PE check.
                     if not file_info.is_dir(): # Only process files, not directories
+                        if not target_dir.exists():
+                            target_dir.mkdir(parents=True, exist_ok=True)
                         z.extract(file_info, target_dir)
                         extracted_path = target_dir / file_info.filename
                         
@@ -160,7 +162,7 @@ def main():
     for pkg in packages:
         print(f"\n--- Processing Package: {pkg['id']} ---")
         target_dir = base_dir / pkg['id']
-        target_dir.mkdir(parents=True, exist_ok=True)
+        # target_dir.mkdir(parents=True, exist_ok=True) # <-- 改為延遲建立
         
         result = download_and_extract_nupkg(pkg['url'], target_dir, enable_download, history)
         if result == "RATE_LIMIT":
@@ -168,6 +170,9 @@ def main():
             break
         
         time.sleep(1)
+        
+    # 執行完畢後清理空資料夾
+    remove_empty_dirs(base_dir)
 
 if __name__ == "__main__":
     main()

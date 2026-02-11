@@ -57,3 +57,19 @@ def is_pe_file(file_path):
         return True
     except Exception:
         return False
+
+def remove_empty_dirs(root_path):
+    """
+    遞迴移除指定路徑下的所有空資料夾。
+    """
+    if not os.path.exists(root_path):
+        return
+        
+    for root, dirs, files in os.walk(root_path, topdown=False):
+        for name in dirs:
+            dir_path = os.path.join(root, name)
+            try:
+                if not os.listdir(dir_path):
+                    os.rmdir(dir_path)
+            except:
+                pass

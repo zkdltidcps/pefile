@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from bs4 import BeautifulSoup
 import re
-from utils import check_disk_usage, get_threshold_from_config, is_pe_file
+from utils import check_disk_usage, get_threshold_from_config, is_pe_file, remove_empty_dirs
 
 HISTORY_FILE = Path("benign_pe/metadata/history_portable.json")
 
@@ -71,6 +71,10 @@ def download_file(url, target_dir, enable_download, history):
             file_name = "downloaded_app.exe"
 
         dest_path = target_dir / file_name
+        
+        if not target_dir.exists():
+            target_dir.mkdir(parents=True, exist_ok=True)
+            
         with open(dest_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
@@ -208,12 +212,15 @@ def main():
         
         if real_download_url:
             target_dir = base_dir / app['name'].replace(" ", "_").replace("/", "_")
-            target_dir.mkdir(parents=True, exist_ok=True)
+            # target_dir.mkdir(parents=True, exist_ok=True) # <-- 改為延遲建立
             download_file(real_download_url, target_dir, enable_download, history)
         else:
             print("  Could not find download URL.")
         
         time.sleep(2)
+
+    # 執行完畢後清理空資料夾
+    remove_empty_dirs(base_dir)
 
 if __name__ == "__main__":
     main()
